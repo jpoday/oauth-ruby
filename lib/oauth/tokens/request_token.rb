@@ -5,7 +5,8 @@ module OAuth
 
     # Generate an authorization URL for user authorization
     def authorize_url(params = nil)
-      params = (params || {}).merge(:oauth_token => self.token)
+      # Joseph O'Day hack 2/12/12, added :oauth_consumer_key to avoid paramter stripping for netflix
+      params = (params || {}).merge(:oauth_token => self.token, :oauth_consumer_key => self.consumer.key)
       build_authorize_url(consumer.authorize_url, params)
     end
 
