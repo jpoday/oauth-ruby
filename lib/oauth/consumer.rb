@@ -317,6 +317,10 @@ module OAuth
       else
         http_object.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
+
+      http_object.read_timeout = http_object.open_timeout = @options[:timeout] || 30
+      http_object.open_timeout = @options[:open_timeout] if @options[:open_timeout]
+
       http_object
     end
 
@@ -327,6 +331,10 @@ module OAuth
       if [:post, :put].include?(http_method)
         data = arguments.shift
       end
+
+      # if the base site contains a path, add it now
+      uri = URI.parse(site)
+      path = uri.path + path if uri.path && uri.path != '/'
 
       headers = arguments.first.is_a?(Hash) ? arguments.shift : {}
 
@@ -348,9 +356,8 @@ module OAuth
       end
 
       if data.is_a?(Hash)
-        form_data = {}
-        data.each {|k,v| form_data[k.to_s] = v if !v.nil?}
-        request.set_form_data(form_data)
+        request.body = OAuth::Helper.normalize(data)
+        request.content_type = 'application/x-www-form-urlencoded'
       elsif data
         if data.respond_to?(:read)
           request.body_stream = data

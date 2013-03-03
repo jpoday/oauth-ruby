@@ -123,7 +123,7 @@ class NetHTTPClientTest < Test::Unit::TestCase
 
     assert_equal 'POST', request.method
     assert_equal '/test', request.path
-    assert_equal "key=value&oauth_consumer_key=consumer_key_86cad9&oauth_nonce=225579211881198842005988698334675835446&oauth_signature=26g7wHTtNO6ZWJaLltcueppHYiI%3d&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1199645624&oauth_token=token_411a7f&oauth_version=1.0", request.body.split("&").sort.join("&")
+    assert_match /key=value&oauth_consumer_key=consumer_key_86cad9&oauth_nonce=225579211881198842005988698334675835446&oauth_signature=26g7wHTtNO6ZWJaLltcueppHYiI%3[Dd]&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1199645624&oauth_token=token_411a7f&oauth_version=1.0/, request.body.split("&").sort.join("&")
     assert_equal nil, request['authorization']
   end
 
@@ -136,6 +136,18 @@ class NetHTTPClientTest < Test::Unit::TestCase
     assert_equal '/test', request.path
     assert_equal "key=value&oauth_consumer_key=consumer_key_86cad9&oauth_nonce=225579211881198842005988698334675835446&oauth_signature=5888bf0345e5d237%263196ffd991c8ebdb&oauth_signature_method=PLAINTEXT&oauth_timestamp=1199645624&oauth_token=token_411a7f&oauth_version=1.0", request.body.split("&").sort.join("&")
     assert_equal nil, request['authorization']
+  end
+
+  def test_that_using_post_body_works
+    request = Net::HTTP::Post.new(@request_uri.path)
+    request['content-type'] = 'application/x-www-form-urlencoded'
+    request.body = 'this is a test of the emergency broad cast system. This is only a test.'
+    request.oauth!(@http, @consumer, @token, {:nonce => @nonce, :timestamp => @timestamp})
+
+    assert_equal 'POST', request.method
+    assert_equal '/test', request.path
+    assert_match /OAuth oauth_consumer_key="consumer_key_86cad9", oauth_nonce="225579211881198842005988698334675835446", oauth_signature="%2[fF]DMMBOJzQ6JmEaXlAXDLGtD1z2I%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1199645624", oauth_token="token_411a7f", oauth_version="1.0"/, request['authorization'].split("&").sort.join("&")
+    # assert_equal nil, request['authorization']
   end
 
   def test_that_using_post_with_uri_params_works
@@ -245,7 +257,7 @@ class NetHTTPClientTest < Test::Unit::TestCase
     request = Net::HTTP::Put.new(@request_uri.path)
     request.set_form_data( { 'key2' => 'value2' } )
     signature_base_string=request.signature_base_string(@http, @consumer, nil, { :nonce => @nonce, :timestamp => @timestamp })
-    assert_equal "PUT&http%3A%2F%2Fexample.com%2Ftest&oauth_consumer_key%3Dconsumer_key_86cad9%26oauth_nonce%3D225579211881198842005988698334675835446%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1199645624%26oauth_version%3D1.0", signature_base_string
+    assert_equal "PUT&http%3A%2F%2Fexample.com%2Ftest&key2%3Dvalue2%26oauth_consumer_key%3Dconsumer_key_86cad9%26oauth_nonce%3D225579211881198842005988698334675835446%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1199645624%26oauth_version%3D1.0", signature_base_string
   end
 
   def test_that_post_bodies_signed_if_form_urlencoded

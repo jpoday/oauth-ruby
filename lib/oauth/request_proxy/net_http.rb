@@ -32,6 +32,7 @@ module OAuth::RequestProxy::Net
 
       def all_parameters
         request_params = CGI.parse(query_string)
+        # request_params.each{|k,v| request_params[k] = [nil] if v == []}
 
         if options[:parameters]
           options[:parameters].each do |k,v|
@@ -47,7 +48,7 @@ module OAuth::RequestProxy::Net
 
       def query_string
         params = [ query_params, auth_header_params ]
-        params << post_params if method.to_s.upcase == 'POST' && form_url_encoded?
+        params << post_params if (method.to_s.upcase == 'POST' || method.to_s.upcase == 'PUT') && form_url_encoded?
         params.compact.join('&')
       end
 
